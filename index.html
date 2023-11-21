@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSE Image Carousel Example</title>
+</head>
+<body>
+    <h1 id="heading">Example</h1>
+    <div id="image-container"></div>
+
+    <script>
+        const imageContainer = document.getElementById('image-container');
+        const headline = document.getElementById('heading')
+        const eventSource = new EventSource('http://localhost:9000/sse');
+
+        eventSource.onmessage = (event) => {
+            const eventData = JSON.parse(event.data)
+            console.log(eventData)
+            // console.log(eventData.resultData, eventData.resTitles);
+            const imageData = eventData.resultData['images'];
+            const title = eventData.title;
+            // Create a Blob from the base64-encoded image data
+            const blob = base64ToBlob(imageData);
+
+            // Create a blob URL and set it as the image source
+            const blobURL = window.URL.createObjectURL(blob);
+
+            // Create an image element
+            const img = document.createElement('img');
+            img.src = blobURL;
+            
+            // Set dimensions to 200 by 200 pixels
+            img.width = 200;
+            img.height = 200;
+
+            // Append the image to the container
+            imageContainer.innerHTML = '';
+            imageContainer.appendChild(img);
+
+            headline.innerHTML=`${title}`;
+        };
+
+        eventSource.onerror = (error) => {
+            console.error('EventSource failed:', error);
+            eventSource.close();
+        };
+
+        // Function to convert base64 to Blob
+        const base64ToBlob = (base64String) => {
+            const decodedImageData = atob(base64String);
+            const uint8Array = new Uint8Array(decodedImageData.length);
+            for (let i = 0; i < decodedImageData.length; i += 1) {
+                uint8Array[i] = decodedImageData.charCodeAt(i);
+            }
+            return new Blob([uint8Array], { type: 'image/jpeg' });
+        }
+    </script>
+</body>
+</html>
